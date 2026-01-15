@@ -111,6 +111,63 @@
       display: block;
     }
 
+    /* Controles personalizados para o vídeo */
+    .video-controls {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+
+    .video-btn {
+      background: rgba(0, 255, 136, 0.1);
+      border: 1px solid #00ff88;
+      color: #00ff88;
+      border-radius: 8px;
+      padding: 8px 15px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .video-btn:hover {
+      background: rgba(0, 255, 136, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .video-btn.active {
+      background: #00ff88;
+      color: #000;
+      font-weight: bold;
+    }
+
+    .video-status {
+      font-size: 13px;
+      color: #aaa;
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .video-status .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #00ff88;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
     /* Cards responsivos */
     .packs {
       display: grid;
@@ -343,18 +400,6 @@
       animation: pulse 2s infinite;
       border: none;
       white-space: nowrap;
-    }
-
-    @keyframes pulse {
-      0% {
-        box-shadow: 0 0 0 0 rgba(255, 51, 102, 0.6);
-      }
-      70% {
-        box-shadow: 0 0 0 10px rgba(255, 51, 102, 0);
-      }
-      100% {
-        box-shadow: 0 0 0 0 rgba(255, 51, 102, 0);
-      }
     }
 
     #casino-btn:hover {
@@ -622,13 +667,45 @@
       <h2>Veja como funciona dentro do Telegram</h2>
       <p>Assista ao vídeo abaixo e confira todo o conteúdo disponível</p>
       <div class="video-vertical-container">
-        <video controls muted playsinline preload="metadata" poster="https://images.unsplash.com/photo-1571330735066-03aaa9429d89?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80">
-          <source src="aqui.mp4" type="video/mp4" />
-          Seu navegador não suporta vídeo.
+        <video id="main-video" autoplay muted loop playsinline preload="auto">
+          <!-- Fonte primária -->
+          <source src="aqui.mp4" type="video/mp4">
+          <!-- Fallback 1 -->
+          <source src="video.mp4" type="video/mp4">
+          <!-- Fallback 2 -->
+          <source src="./video.mp4" type="video/mp4">
+          <!-- Fallback 3 (caminho alternativo) -->
+          <source src="/aqui.mp4" type="video/mp4">
+          Seu navegador não suporta vídeo HTML5.
         </video>
       </div>
+      
+      <!-- Controles personalizados -->
+      <div class="video-controls">
+        <button class="video-btn active" id="btn-loop">
+          <i class="fas fa-sync-alt"></i> Loop Ativo
+        </button>
+        <button class="video-btn" id="btn-sound">
+          <i class="fas fa-volume-mute"></i> Sem Som
+        </button>
+        <button class="video-btn" id="btn-reload">
+          <i class="fas fa-redo"></i> Reiniciar
+        </button>
+        <button class="video-btn" id="btn-play">
+          <i class="fas fa-play"></i> Reproduzir
+        </button>
+        <button class="video-btn" id="btn-pause">
+          <i class="fas fa-pause"></i> Pausar
+        </button>
+      </div>
+      
+      <div class="video-status">
+        <span class="status-indicator"></span>
+        <span id="video-status-text">Vídeo rodando em loop automático</span>
+      </div>
+      
       <p style="margin-top: 15px; font-size: 14px; color: #aaa;">
-        <i class="fas fa-mobile-alt"></i> Vídeo otimizado para visualização vertical
+        <i class="fas fa-mobile-alt"></i> Vídeo otimizado para visualização vertical | <i class="fas fa-sync-alt"></i> Loop contínuo
       </p>
     </div>
 
@@ -778,6 +855,128 @@
     let usedNotifications = [];
     let usedTestimonials = [];
 
+    // Função para carregar e configurar o vídeo principal
+    function setupVideo() {
+      const video = document.getElementById('main-video');
+      const statusText = document.getElementById('video-status-text');
+      const btnLoop = document.getElementById('btn-loop');
+      const btnSound = document.getElementById('btn-sound');
+      const btnReload = document.getElementById('btn-reload');
+      const btnPlay = document.getElementById('btn-play');
+      const btnPause = document.getElementById('btn-pause');
+      
+      if (!video) {
+        console.error('Elemento de vídeo não encontrado');
+        return;
+      }
+      
+      // Configurações iniciais do vídeo
+      video.autoplay = true;
+      video.muted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.preload = 'auto';
+      
+      // Tentar diferentes fontes de vídeo
+      const videoSources = [
+        'aqui.mp4',
+        'video.mp4',
+        './video.mp4',
+        '/aqui.mp4',
+        'https://assets.mixkit.co/videos/preview/mixkit-dj-performing-in-a-party-5025-large.mp4' // Fallback online
+      ];
+      
+      let currentSourceIndex = 0;
+      
+      function tryNextSource() {
+        if (currentSourceIndex < videoSources.length) {
+          const source = videoSources[currentSourceIndex];
+          console.log(`Tentando carregar vídeo: ${source}`);
+          video.src = source;
+          video.load();
+          currentSourceIndex++;
+        } else {
+          console.error('Nenhuma fonte de vídeo funcionou');
+          statusText.textContent = 'Vídeo não disponível - Carregando conteúdo alternativo';
+        }
+      }
+      
+      // Event listeners para o vídeo
+      video.addEventListener('loadeddata', function() {
+        console.log('Vídeo carregado com sucesso');
+        statusText.textContent = 'Vídeo rodando em loop automático';
+        video.play().catch(e => console.log('Auto-play bloqueado:', e));
+      });
+      
+      video.addEventListener('error', function() {
+        console.log(`Erro ao carregar vídeo da fonte ${currentSourceIndex}`);
+        setTimeout(tryNextSource, 1000);
+      });
+      
+      video.addEventListener('play', function() {
+        statusText.textContent = 'Vídeo rodando em loop automático';
+      });
+      
+      video.addEventListener('pause', function() {
+        statusText.textContent = 'Vídeo pausado';
+      });
+      
+      video.addEventListener('ended', function() {
+        if (video.loop) {
+          video.currentTime = 0;
+          video.play();
+        }
+      });
+      
+      // Controles de botão
+      btnLoop.addEventListener('click', function() {
+        video.loop = !video.loop;
+        btnLoop.classList.toggle('active', video.loop);
+        btnLoop.innerHTML = video.loop ? 
+          '<i class="fas fa-sync-alt"></i> Loop Ativo' : 
+          '<i class="fas fa-times"></i> Loop Desativado';
+        statusText.textContent = video.loop ? 
+          'Vídeo rodando em loop automático' : 
+          'Loop desativado - Vídeo parará ao final';
+      });
+      
+      btnSound.addEventListener('click', function() {
+        video.muted = !video.muted;
+        btnSound.classList.toggle('active', !video.muted);
+        btnSound.innerHTML = video.muted ? 
+          '<i class="fas fa-volume-mute"></i> Sem Som' : 
+          '<i class="fas fa-volume-up"></i> Com Som';
+      });
+      
+      btnReload.addEventListener('click', function() {
+        video.currentTime = 0;
+        video.play();
+        statusText.textContent = 'Vídeo reiniciado';
+      });
+      
+      btnPlay.addEventListener('click', function() {
+        video.play();
+        statusText.textContent = 'Vídeo reproduzindo';
+      });
+      
+      btnPause.addEventListener('click', function() {
+        video.pause();
+        statusText.textContent = 'Vídeo pausado';
+      });
+      
+      // Iniciar tentativa de carregamento
+      tryNextSource();
+      
+      // Fallback: se após 5 segundos o vídeo não carregar, tentar alternativa online
+      setTimeout(() => {
+        if (video.readyState < 2) { // Se ainda não carregou
+          console.log('Tentando fallback online...');
+          video.src = 'https://assets.mixkit.co/videos/preview/mixkit-dj-performing-in-a-party-5025-large.mp4';
+          video.load();
+        }
+      }, 5000);
+    }
+    
     // Função para gerar notificação
     function generateNotification() {
       const container = document.getElementById('notification-container');
@@ -919,6 +1118,20 @@
 
     // Inicializar
     document.addEventListener('DOMContentLoaded', function() {
+      // Configurar vídeo principal
+      setupVideo();
+      
+      // Configurar vídeo de fundo
+      const bgVideo = document.getElementById('bg-video');
+      if (bgVideo) {
+        bgVideo.src = 'fundo.mp4';
+        bgVideo.loop = true;
+        bgVideo.muted = true;
+        bgVideo.autoplay = true;
+        bgVideo.playsInline = true;
+        bgVideo.load();
+      }
+      
       // Gerar primeira notificação
       setTimeout(() => generateNotification(), 1000);
       
@@ -956,21 +1169,6 @@
       
       // Executar ajuste quando a janela for redimensionada
       window.addEventListener('resize', adjustForMobile);
-    });
-
-    // Carregar vídeos corretamente
-    window.addEventListener('load', function() {
-      const bgVideo = document.getElementById('bg-video');
-      if (bgVideo) {
-        bgVideo.src = 'fundo.mp4';
-        bgVideo.load();
-      }
-      
-      const mainVideo = document.querySelector('.video-vertical-container video');
-      if (mainVideo) {
-        mainVideo.src = 'aqui.mp4';
-        mainVideo.load();
-      }
     });
   </script>
 </body>
